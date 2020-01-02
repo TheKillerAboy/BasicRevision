@@ -36,88 +36,55 @@ template<typename T,typename... Ts> void TRACE(T t,Ts... args){TRACEV(t); _T; TR
 
 #define ll long long int
 #define ull unsigned long long int
-#define ld long double
 #define pii pair<int,int>
-#define PI 3.141592654
 
-template<typename T>
-struct MathVec{
-	T x,y;
-	MathVec(): x(0), y(0){}
-	MathVec(T X, T Y): x(X), y(Y){}
-	MathVec<T> add(const MathVec<T>& other){
-		return MathVec(x+other.x,y+other.y);
-	}
-	MathVec<T> neg(const MathVec<T>& other){
-		return MathVec(x-other.x,y-other.y);
-	}
-	ld abs(){
-		return sqrt(x*x+y*y);
-	}
-	T dot(const MathVec<T>& other){
-		return x*other.x + y*other.y;
-	}
-	static bool cmp(const MathVec<T>& a, const MathVec<T>& b){
-		if(a.x == b.x) return a.y < b.y;
-		return a.x < b.x;
-	}
-	ld angle_between(MathVec<T>& other){
-		ld abs_other = other.abs();
-		return acos(dot(other)/(abs() * other.abs()));
-	}
-	pair<ld,ld> line(const MathVec<T>& other){
-		ld m = (ld)(y-other.y)/(x-other.x);
-		return pair<ld,ld>{m,y-m*x};
-	}
-};
-template<typename T>
-void TRACEV(const MathVec<T>& a){
-	cerr<<"("<<a.x<<", "<<a.y<<")";
+int N;
+vector<pii> points;
+
+inline int slope_top(pii a, pii b){
+	return a.second - b.second;
 }
 
-template<typename T>
-inline bool cmp_upper(const MathVec<T>& a, const MathVec<T>& b,const MathVec<T>& c){
-	return (a.x-b.x)*(c.y-a.y) > (a.y-b.y)*(c.x-a.x);
+inline int slope_bot(pii a, pii b){
+	return a.first - b.first;
 }
 
-	int N;
 
-template<typename T>
-list<int> get_convex_hull(T points){
-	list<int> convex_hull = {0,1};
-	FORS(2,curCheck,N){
+list<int> get_upper_hull(){
+	list<int> hull = {0,1};
+	FORS(2,i,N){
 		while(true){
-			if(convex_hull.size() == 1){
-				convex_hull.push_back(curCheck);
+			if(hull.size() == 1){
+				hull.push_back(i);
 				break;
 			}
-			int a = *prev(convex_hull.end(),2);
-			int b = *prev(convex_hull.end(),1);
-			if(cmp_upper(points[a],points[b],points[curCheck])){
-				convex_hull.pop_back();
+			auto a = *prev(hull.end(),2);
+			auto b = *prev(hull.end(),1);
+
+			if(slope_top(points[b],points[i])*slope_bot(points[a],points[b]) < slope_top(points[a],points[b])*slope_bot(points[b],points[i])){
+				hull.pop_back();
 			}
 			else{
-				convex_hull.push_back(curCheck);
+				hull.push_back(i);
 				break;
 			}
 		}
 	}
-	return convex_hull;
+	return hull;
 }
 
-#define print_conv_h FORA(i,convex_hull) {TRACEV(points[i]); _}_N
 int main(){
 	cin.tie(0);
 	ios::sync_with_stdio(false);
 	cin>>N;
-	vector<MathVec<ll>> points(N);
-	FOR(i,N) cin>>points[i].x>>points[i].y;
-	sort(points.begin(),points.end(),MathVec<ll>::cmp);
-	auto convex_hull = get_convex_hull(points);
-	print_conv_h
-	FOR(i,N) points[i].y=-points[i].y;
-	convex_hull = get_convex_hull(points);
-	FOR(i,N) points[i].y=-points[i].y;
-	print_conv_h
+	points.resize(N);
+	FOR(i,N) cin>>points[i].first>>points[i].second;
+	sort(points.begin(),points.end());
+	auto upper_hull = get_upper_hull();
+	FOR(i,N) points[i].second = -points[i].second;
+	auto lower_hull = get_upper_hull();
+	FOR(i,N) points[i].second = -points[i].second;
+	FORA(i,upper_hull){TRACEV(points[i]);_}_N
+	FORA(i,lower_hull){TRACEV(points[i]);_}_N
 	return 0;
 }

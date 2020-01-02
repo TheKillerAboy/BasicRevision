@@ -36,88 +36,72 @@ template<typename T,typename... Ts> void TRACE(T t,Ts... args){TRACEV(t); _T; TR
 
 #define ll long long int
 #define ull unsigned long long int
-#define ld long double
 #define pii pair<int,int>
-#define PI 3.141592654
 
 template<typename T>
-struct MathVec{
-	T x,y;
-	MathVec(): x(0), y(0){}
-	MathVec(T X, T Y): x(X), y(Y){}
-	MathVec<T> add(const MathVec<T>& other){
-		return MathVec(x+other.x,y+other.y);
+struct Frac{
+	T abv,btm;
+	static T gcd(T a,T b){
+		if(b > a) return gcd(b,a);
+		else if(b == 0) return a;
+		else return gcd(b,a%b);
 	}
-	MathVec<T> neg(const MathVec<T>& other){
-		return MathVec(x-other.x,y-other.y);
-	}
-	ld abs(){
-		return sqrt(x*x+y*y);
-	}
-	T dot(const MathVec<T>& other){
-		return x*other.x + y*other.y;
-	}
-	static bool cmp(const MathVec<T>& a, const MathVec<T>& b){
-		if(a.x == b.x) return a.y < b.y;
-		return a.x < b.x;
-	}
-	ld angle_between(MathVec<T>& other){
-		ld abs_other = other.abs();
-		return acos(dot(other)/(abs() * other.abs()));
-	}
-	pair<ld,ld> line(const MathVec<T>& other){
-		ld m = (ld)(y-other.y)/(x-other.x);
-		return pair<ld,ld>{m,y-m*x};
-	}
-};
-template<typename T>
-void TRACEV(const MathVec<T>& a){
-	cerr<<"("<<a.x<<", "<<a.y<<")";
-}
-
-template<typename T>
-inline bool cmp_upper(const MathVec<T>& a, const MathVec<T>& b,const MathVec<T>& c){
-	return (a.x-b.x)*(c.y-a.y) > (a.y-b.y)*(c.x-a.x);
-}
-
-	int N;
-
-template<typename T>
-list<int> get_convex_hull(T points){
-	list<int> convex_hull = {0,1};
-	FORS(2,curCheck,N){
-		while(true){
-			if(convex_hull.size() == 1){
-				convex_hull.push_back(curCheck);
-				break;
-			}
-			int a = *prev(convex_hull.end(),2);
-			int b = *prev(convex_hull.end(),1);
-			if(cmp_upper(points[a],points[b],points[curCheck])){
-				convex_hull.pop_back();
-			}
-			else{
-				convex_hull.push_back(curCheck);
-				break;
-			}
+	Frac(T abv_, T btm_){
+		T com = Frac<T>::gcd(abv_, btm_);
+		abv = abv_/com;
+		btm = btm_/com;
+		if(btm < 0){
+			abv *= -1;
+			btm *= -1;
 		}
 	}
-	return convex_hull;
+	Frac(): abv(0), btm(1){}
+	Frac<T> operator *(Frac<T> b){
+		return Frac<T>(abv*b.abv,btm,btm*b.btm);
+	}
+	Frac<T> operator /(Frac<T> b){
+		return Frac<T>(abv*b.btm,btm,btm*b.abv);
+	}
+	Frac<T> operator +(Frac<T> b){
+		return Frac<T>(abv*b.btm + b.abv*btm,b.btm*btm);
+	}
+	Frac<T> operator -(Frac<T> b){
+		return Frac<T>(abv*b.btm - b.abv*btm,b.btm*btm);
+	}
+};
+
+const Frac<ull> FRAC1(1,1);
+const Frac<ull> FRAC0(0,1);
+const Frac<ull> FRACNEG1(-1,1);
+
+int N;
+Frac<ull> DP[1005][1005];
+Frac<ull> Ts[1005];
+
+Frac<ull> dp(int k, int n){
+	if(k == 1) return Ts[n-1]/(FRAC1 - Ts[n-1]);
+	if(n < k) return FRAC0;
+	if(DP[k][n] == FRACNEG1) return DP[k][n];
+	DP[k][n] = T[n-1] * (dp(k,n-1)/T[n-2] + dp(k-1,n-1));
+	return DP[k][n];
 }
 
-#define print_conv_h FORA(i,convex_hull) {TRACEV(points[i]); _}_N
+template<typename T>
+void TRACEV(const Frac<T>& a){
+	TRACEV(a.abv); TRACED('/'); TRACEV(a.btm);
+}
+
 int main(){
 	cin.tie(0);
 	ios::sync_with_stdio(false);
+
 	cin>>N;
-	vector<MathVec<ll>> points(N);
-	FOR(i,N) cin>>points[i].x>>points[i].y;
-	sort(points.begin(),points.end(),MathVec<ll>::cmp);
-	auto convex_hull = get_convex_hull(points);
-	print_conv_h
-	FOR(i,N) points[i].y=-points[i].y;
-	convex_hull = get_convex_hull(points);
-	FOR(i,N) points[i].y=-points[i].y;
-	print_conv_h
+	FOR(i,1005) FOR(j,1005) DP[i][j] = FRACNEG1;
+	ull abv, btm;
+	FOR(i,N){
+		cin>>abv>>btm;
+		Ts[i] = Frac<ull>(abv,btm);
+	}
+	TRACE(Ts);
 	return 0;
 }
